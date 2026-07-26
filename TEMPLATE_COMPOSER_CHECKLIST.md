@@ -69,6 +69,7 @@ No public domain needed — internal only.
 |----------|-------|-----------------|-------------|
 | `POSTGRES_USER` | `temporal` | No | Matches what `temporal`'s own `POSTGRES_USER` variable must reference. |
 | `POSTGRES_PASSWORD` | `${{secret(32)}}` | No | Auto-generated. Must match what's referenced on the `temporal` service — set as a cross-service reference there, not independently generated (same class of desync bug already caught on this project's Typebot template). |
+| `PGDATA` | `/var/lib/postgresql/data/pgdata` | **Yes** | **Required, confirmed via a real crash, not a preemptive guess.** Mounting the volume directly at `/var/lib/postgresql/data` leaves a `lost+found` directory there (standard on a freshly formatted volume filesystem), which breaks Postgres's own `initdb` — it expects a genuinely empty directory. Setting `PGDATA` to a subdirectory of the mount point fixes it, same pattern Railway's own managed Postgres plugin already uses everywhere else in this project. |
 
 No public domain needed — internal only. Mount a Railway Volume at `/var/lib/postgresql/data` for persistence.
 
