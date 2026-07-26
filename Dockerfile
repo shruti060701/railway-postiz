@@ -12,6 +12,17 @@ USER root
 # reference docker-compose's own internal port split.
 COPY backend-package.json /app/apps/backend/package.json
 
+# Real bug, confirmed via a live signup attempt: Postiz's own cookie-domain
+# calculation (getCookieUrlFromDomain) uses tldts to guess an eTLD+1 from
+# FRONTEND_URL and scopes the auth cookie to it. On Railway's default
+# *.up.railway.app domain this computes Domain=.railway.app, which real
+# browsers silently reject (it's on the actual Public Suffix List, even
+# though tldts's bundled data doesn't know that) - so login/register
+# succeed server-side but the session cookie never lands in the browser.
+# Patching the compiled file to always use the exact hostname instead,
+# which every browser accepts unconditionally.
+COPY fixes/subdomain.management.js /app/apps/backend/dist/libraries/helpers/src/subdomain/subdomain.management.js
+
 ENV PORT=5000
 ENV NODE_ENV=production
 ENV IS_GENERAL=true
