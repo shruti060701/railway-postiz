@@ -1,7 +1,7 @@
 ## Template Titles
 
-**Railway Title:** `Postiz [Updated May '26]`
-**Railway Description:** `Postiz [May '26] (Schedule Posts to X, LinkedIn & Reddit) Self Host`
+**Railway Title:** `Postiz [Updated Jul '26]`
+**Railway Description:** `Postiz [Jul '26] (Schedule Posts to X, LinkedIn & Reddit) Self Host`
 **Spreadsheet Title:** `Postiz (Open-Source Social Media Scheduling & Publishing Platform)`
 **GitHub Description:** `Postiz — open-source social media scheduler for X, LinkedIn, Reddit, and more. Deploy on Railway with one click.`
 
@@ -41,15 +41,15 @@ Buffer's Team plan costs $60 per month for 10 channels. Postiz self-hosted on Ra
 
 ## Dependencies for Postiz Docker hosted on Railway
 
-Postiz requires a PostgreSQL database for application data and a Redis instance for session storage and the job queue. This Railway template pre-configures both services with private networking and persistent storage.
+Postiz v2.12+ requires Temporal, a workflow orchestration engine, as a hard dependency for executing scheduled posts — confirmed against Postiz's own official deployment reference. Temporal itself needs Elasticsearch and its own separate PostgreSQL database.
 
 ### Deployment Dependencies for Managed Postiz Service (Social Media Scheduler)
 
-This template deploys PostgreSQL 17 for user accounts, connected social profiles, scheduled posts, and analytics data. Redis 7 handles session storage and the background job queue that publishes scheduled posts. Both services use Railway managed databases with automatic backups and private networking.
+This template deploys 8 services: Postiz, its PostgreSQL, Redis, Elasticsearch (Temporal's visibility store), a second dedicated PostgreSQL (Temporal's own storage), the Temporal server, Temporal UI, and admin-tools. More infrastructure than most self-hosted templates — reflecting Postiz's real architecture, not added complexity.
 
 ### Implementation Details for Postiz (Using Postiz official docker image)
 
-The template uses the official `ghcr.io/gitroomhq/postiz-app:v2.11.3` Docker image. The application exposes port 5000 and serves both the Next.js frontend and API backend. All services communicate over Railway private networking with zero egress fees. A unique JWT_SECRET is auto-generated at deploy time. The MAIN_URL, FRONTEND_URL, and NEXT_PUBLIC_BACKEND_URL variables automatically point to your Railway public domain. Storage is configured for local uploads mounted at `/uploads` with Railway persistent volumes.
+The template uses `ghcr.io/gitroomhq/postiz-app:v2.22.1`, verified against the newest actual registry tag at build time. The app exposes port 5000 and serves both the Next.js frontend and API backend. All services communicate over Railway private networking with zero egress fees. A unique JWT_SECRET is auto-generated at deploy time, and MAIN_URL/FRONTEND_URL/NEXT_PUBLIC_BACKEND_URL automatically point to your Railway domain.
 
 ## How does Postiz compare against other social media scheduling platforms
 
@@ -95,7 +95,7 @@ Postiz is primarily a self-hosted platform. There is no commercial cloud version
 
 ### Monthly cost of self hosting Postiz on Railway
 
-A typical Postiz deployment on Railway costs $5-10 per month for a small team. This includes the managed PostgreSQL database and Redis instance. For teams with heavy scheduling volume, expect $10-15 per month.
+A typical Postiz deployment on Railway costs $20-35 per month — more than a simple 2-3 service template, since Elasticsearch and the Temporal cluster run continuously alongside the app. This reflects Postiz's real current architecture, not padding.
 
 ### System Requirements for Hosting Postiz on a VPS
 
@@ -107,13 +107,13 @@ Postiz requires minimum 1 vCPU, 2GB RAM, and 20GB SSD storage. For production us
 Postiz self-hosted is the open-source social media scheduling platform deployed on your own infrastructure. It includes content calendar management, multi-platform publishing, team collaboration, and AI caption generation without sending data to third-party servers.
 
 ### How much does Postiz self hosting cost on Railway?
-Self-hosting Postiz on Railway costs $5-10 per month for small to medium teams, covering the app container plus managed PostgreSQL and Redis. Costs stay flat regardless of how many social accounts or posts you manage.
+Expect $20-35 per month — Postiz v2.12+ requires a full Temporal stack (Elasticsearch, a second database, Temporal server) alongside the app, costing more than a typical 2-3 service template. Costs stay flat regardless of account or post volume.
 
 ### Is Postiz free to use?
 Yes, Postiz is AGPL-licensed and completely free to self-host. You only pay for the infrastructure to run it. There are no per-channel fees, no user limits, and no feature gates.
 
 ### What social media platforms does Postiz support?
-Postiz supports Twitter/X, LinkedIn, Reddit, Facebook, Instagram, TikTok, YouTube, Threads, Pinterest, Dribbble, Mastodon, Bluesky, Discord, and Slack. New platforms are added regularly by the community.
+Twitter/X, LinkedIn, Reddit, Facebook, Instagram, TikTok, YouTube, Threads, Pinterest, Dribbble, Mastodon, Bluesky, Discord, and Slack. New platforms are added regularly by the community.
 
 ### Where can I download Postiz?
 Postiz source code is on GitHub at github.com/gitroomhq/postiz-app. Docker images are on GitHub Container Registry as ghcr.io/gitroomhq/postiz-app. Use this Railway template to deploy Postiz with managed databases in one click.

@@ -6,11 +6,20 @@ Deploy [Postiz](https://postiz.com), the open-source social media scheduling pla
 
 ## What's Included
 
+Postiz v2.12+ requires [Temporal](https://temporal.io) (a workflow orchestration engine) as a hard dependency — this is a real architecture change from earlier Postiz versions, not an optional extra. This template deploys the full stack Postiz's own official reference (`gitroomhq/postiz-docker-compose`) uses:
+
 | Service | Image | Purpose |
 |---|---|---|
-| **Postiz** | `ghcr.io/gitroomhq/postiz-app:v2.11.3` | Social media scheduling app + API |
-| **PostgreSQL** | Railway Managed | App data, user accounts, posts |
+| **Postiz** | `ghcr.io/gitroomhq/postiz-app:v2.22.1` | Social media scheduling app + API |
+| **PostgreSQL** (main) | Railway Managed | Postiz's own app data — users, posts, connected accounts |
 | **Redis** | Railway Managed | Session store, job queue |
+| **Elasticsearch** | `elasticsearch:7.17.27` | Temporal's internal workflow visibility store |
+| **PostgreSQL** (Temporal) | `postgres:16` | A second, separate database — Temporal's own storage, not shared with Postiz |
+| **Temporal Server** | `temporalio/auto-setup:1.28.1` | Workflow orchestration engine that actually runs scheduled posts |
+| **Temporal UI** | `temporalio/ui:2.34.0` | Optional admin dashboard for inspecting workflow runs |
+| **Temporal Admin Tools** | `temporalio/admin-tools:1.28.1-tctl-1.18.4-cli-1.4.1` | Optional CLI container for manual workflow inspection — see notes below |
+
+This is a genuinely heavier template than most self-hosted tools — 8 services instead of the usual 2-3 — because that's what Postiz itself now requires to function, not a design choice made here.
 
 ## Features
 
@@ -50,12 +59,15 @@ railway domain
 
 | Variable | Description | Default |
 |---|---|---|
-| `DATABASE_URL` | PostgreSQL connection | Auto-configured |
+| `PORT` | Port Railway routes external traffic to | `5000` |
+| `DATABASE_URL` | PostgreSQL connection (Postiz's own app DB) | Auto-configured |
 | `REDIS_URL` | Redis connection | Auto-configured |
+| `TEMPORAL_ADDRESS` | Address of the Temporal server — required, not optional | Auto-configured |
 | `JWT_SECRET` | Secret for signing sessions | Auto-generated |
 | `MAIN_URL` | Public URL | Auto-configured |
 | `FRONTEND_URL` | Frontend URL | Auto-configured |
 | `NEXT_PUBLIC_BACKEND_URL` | API URL | Auto-configured |
+| `NEXT_PUBLIC_UPLOAD_DIRECTORY` | Public path for uploaded media | `/uploads` |
 | `BACKEND_INTERNAL_URL` | Internal API URL | `http://localhost:3000` |
 | `IS_GENERAL` | Multi-user mode | `true` |
 | `STORAGE_PROVIDER` | File storage | `local` |
@@ -64,15 +76,17 @@ railway domain
 
 ## Estimated Cost
 
-~$5-10/month on Railway (Postiz + PostgreSQL + Redis). Stays flat regardless of social account count.
+$20-35/month on Railway — significantly more than most templates in this collection, since Elasticsearch and the Temporal cluster add real compute cost on top of the app itself. Stays flat regardless of social account count, but budget for 8 running services, not 2-3.
 
 ## Notes
 
-- **Version**: This template uses Postiz v2.11.3, the last stable version that runs without Temporal. Newer versions require a Temporal workflow engine.
+- **Version**: This template uses Postiz v2.22.1, the newest verified stable release at build time, with the full Temporal stack it now requires.
+- **Why Temporal?** Postiz v2.12+ moved scheduled-post execution to Temporal workflows. This isn't optional — the app cannot start without a reachable Temporal server.
 - **Disable Registration**: After creating your admin account, set `DISABLE_REGISTRATION=true` to prevent unauthorized signups
 - **Social OAuth**: To connect social accounts, you'll need to configure OAuth apps for each platform (X, LinkedIn, etc.)
 - **Email**: Configure `RESEND_API_KEY` and `EMAIL_FROM_ADDRESS` to enable email notifications
-- **Upgrades**: Update the image tag in the Dockerfile to upgrade Postiz
+- **Temporal Admin Tools**: this service has no real function on Railway by itself (it's a CLI container meant for interactive `docker exec`-style access) — use `railway ssh` into it if you ever need manual workflow inspection
+- **Upgrades**: Update the image tag in the Dockerfile to upgrade Postiz — verify Temporal compatibility before bumping major versions
 
 ## License
 
