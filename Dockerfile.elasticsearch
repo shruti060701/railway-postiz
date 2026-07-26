@@ -5,3 +5,4 @@ FROM elasticsearch:7.17.27
 # directory. Confirmed via a real deploy crash (AccessDeniedException
 # on /usr/share/elasticsearch/data/nodes), not a preemptive guess.
 USER root
+
