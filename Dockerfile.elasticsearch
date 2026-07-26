@@ -1,0 +1,7 @@
+FROM elasticsearch:7.17.27
+
+# Railway volumes mount as root-owned; the official image runs as a
+# non-root elasticsearch user, which then can't write to its own data
+# directory. Confirmed via a real deploy crash (AccessDeniedException
+# on /usr/share/elasticsearch/data/nodes), not a preemptive guess.
+USER root
